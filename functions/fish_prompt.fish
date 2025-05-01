@@ -46,6 +46,8 @@ function fish_prompt --description 'Write out the prompt'
     or set -g __fish_git_prompt_char_stateseparator '⚡'
     fish_vcs_prompt ' | %s'
     fish_k8s_prompt ' | %s'
+    
+    echo
 
     if not test $last_status -eq 0
         set_color $fish_color_error

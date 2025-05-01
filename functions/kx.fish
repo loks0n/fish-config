@@ -3,5 +3,7 @@ function kx --description "Switch kubectl context with autocomplete"
         kubectl config current-context
     else
         kubectl config use-context $argv
+        # Force prompt update
+        commandline -f repaint
     end
 end
