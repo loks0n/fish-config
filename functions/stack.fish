@@ -177,8 +177,10 @@ function stack \
             else
                 # Handle the case where both create and view failed
                 _stack__log "Both PR creation and PR view failed for $branch"
-                # Use a placeholder that shows where we are in the process
-                set pr_url "https://github.com/pr/for/$branch"
+
+                # Use the remote URL to construct a proper GitHub PR creation URL
+                set -l repo_url (git remote get-url --push $remote | string replace -r '^git@github.com:' 'https://github.com/' | string replace -r '\.git$' '')
+                set pr_url "$repo_url/pull/new/$branch"
             end
         end
 
@@ -187,7 +189,12 @@ function stack \
     end
 
     # =================== Pass 2 — add stack links ==========================
-    set -l links (string join "\n" (for url in $pr_urls; echo "- $url"; end))
+    # Create formatted links for each PR URL
+    set -l formatted_links
+    for url in $pr_urls
+        set -a formatted_links "- $url"
+    end
+    set -l links (string join -- "\n" $formatted_links)
     _stack__log "Adding stack links to PR bodies …"
 
     for branch in $branches
