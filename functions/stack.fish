@@ -168,6 +168,11 @@ function stack \
         git branch -f $branch $sha > /dev/null
         git push --quiet --force-with-lease $remote $branch
 
+        if test "$verbose" = "1"
+            echo "DEBUG: git push output for $branch:"
+            git push --force-with-lease $remote $branch 2>&1
+        end
+
         set -l title (git show -s --format=%s $sha)
         set -l body  (git show -s --format=%b $sha)
         if test -z "$body"; set body "•"; end
