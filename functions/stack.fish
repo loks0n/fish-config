@@ -163,7 +163,11 @@ function stack \
         set -l body  (git show -s --format=%b $sha)
         if test -z "$body"; set body "•"; end
 
-        set -l pr_url (printf "%s\n" "$body" | _stack__create_pr "$title" $prev $branch)
+        set -l pr_url
+        if test "$verbose" = "1"
+            echo "DEBUG: Creating PR from $branch to $prev"
+        end
+        set pr_url (printf "%s\n" "$body" | _stack__create_pr "$title" $prev $branch)
         if test $status -ne 0
             if test "$verbose" = "1"
                 echo "DEBUG: PR creation failed, attempting to get URL..."
