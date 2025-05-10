@@ -140,12 +140,20 @@ function stack \
 
     function _stack__edit_pr --argument head --argument title_opt
         set -l file (_stack__stdin_to_file)
-        if set -q title_opt
+        if set -q title_opt; and test -n "$title_opt"
             _stack__log "Updating title/body of PR on $head …"
-            gh pr edit $head --title "$title_opt" --body-file $file > /dev/null
+            # First get the current PR title to ensure we have one if it fails
+            set -l current_title (gh pr view $head --json title -q '.title' 2>/dev/null)
+            # Only update title if we have a new valid title or we have no current title
+            if test -n "$title_opt"; or test -z "$current_title"
+                gh pr edit $head --title "$title_opt" --body-file $file 2>/dev/null
+            else
+                # If no valid title, just update the body
+                gh pr edit $head --body-file $file 2>/dev/null
+            end
         else
             _stack__log "Updating body of PR on $head …"
-            gh pr edit $head --body-file $file > /dev/null
+            gh pr edit $head --body-file $file 2>/dev/null
         end
         rm -f $file
     end
