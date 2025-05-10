@@ -7,3 +7,7 @@ end
 
 # uv
 fish_add_path "/Users/loks0n/.local/bin"
+
+# aliases
+alias lg="lazygit log"
+alias k="kubectl"
