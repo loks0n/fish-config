@@ -30,7 +30,7 @@ function stack \
         echo "Options:"
         echo "  -b, --base=BRANCH    Base branch (default: main or master)"
         echo "  -r, --remote=REMOTE  Remote name (default: origin)"
-        echo "  -v, --verbose        Enable verbose output"
+        echo "  -v, --verbose        Enable verbose output (show detailed logs)"
         echo "  -h, --help           Show this help message"
         return 0
     end
