@@ -231,5 +231,8 @@ function stack \
         printf "✅ Synced %d PR(s), pruned %d orphaned PR(s)/branch(es).\n" $created $removed
     end
 
-    printf "\nStack URLs (oldest → newest):\n%s\n" "$links"
+    echo -e "\nStack URLs (oldest → newest):"
+    for url in $formatted_links
+        echo $url
+    end
 end
