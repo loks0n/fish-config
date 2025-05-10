@@ -105,15 +105,33 @@ function stack \
             return 0
         end
 
-        # Create new PR
-        set -l url (gh pr create \
-                        --base $base \
-                        --head $head \
-                        --title "$title" \
-                        --body-file $file \
-                        --json url -q '.url' 2>&1)
+        # Ensure the branch exists on the remote (might be necessary for PR creation)
+        git push --force-with-lease $remote $head 2>/dev/null
+
+        # Try direct PR creation without capturing output to allow potential interactive authentication
+        if test "$verbose" = "1"
+            echo "DEBUG: Trying direct PR creation"
+        end
+
+        # Use a temporary file for the command output
+        set -l temp_out (mktemp -t stack-pr-output-XXXXXX)
+        gh pr create --base $base --head $head --title "$title" --body-file $file > $temp_out 2>&1
         set -l rc $status
-        rm -f $file
+        set -l url (cat $temp_out)
+        rm -f $temp_out
+
+        # If successful, clean up and return
+        if test $rc -eq 0
+            rm -f $file
+            echo $url
+            return 0
+        end
+
+        # If previous attempt failed, try again with the JSON format
+        gh pr create --base $base --head $head --title "$title" --body-file $file --json url -q '.url' > $temp_out 2>&1
+        set rc $status
+        set url (cat $temp_out)
+        rm -f $temp_out $file
 
         # Debug output
         if test "$verbose" = "1"
@@ -124,12 +142,31 @@ function stack \
             git rev-parse $head 2>&1
             git rev-parse $base 2>&1
             echo "HEAD: $head, BASE: $base"
-            git log --oneline $base..$head
+            git log --oneline $base..$head 2>/dev/null || echo "No commits between $base and $head"
+
+            # Try to diagnose why PR creation might be failing
+            echo "DEBUG: Testing if branch can be pushed..."
+            git push --force-with-lease $remote $head 2>&1
+            echo "DEBUG: Testing if commits exist between branches..."
+            git rev-list --count $base..$head 2>&1
         end
 
         if test $rc -eq 0
             echo $url
             return 0
+        end
+
+        # If still failing, try one more time with the gh command directly
+        # Intentionally not capturing output to trigger interactive authentication if needed
+        if test "$verbose" = "1"
+            echo "DEBUG: Trying final attempt with direct command"
+            gh pr create --base $base --head $head --title "$title" --body "PR for $head"
+            set rc $status
+            if test $rc -eq 0
+                set url (gh pr view $head --json url -q '.url' 2>/dev/null)
+                echo $url
+                return 0
+            end
         end
 
         # Log the failure
