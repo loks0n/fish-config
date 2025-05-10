@@ -92,15 +92,42 @@ function stack \
     function _stack__create_pr --argument title base head
         set -l file (_stack__stdin_to_file)
         _stack__log "Creating PR for $head → $base …"
+        if test "$verbose" = "1"
+            echo "DEBUG: gh pr create --base $base --head $head --title \"$title\" --body-file $file --json url -q '.url'"
+        end
+
+        # First try to get the PR URL directly if it already exists
+        set -l existing_pr (gh pr view $head --json url -q '.url' 2>/dev/null)
+        if test $status -eq 0
+            _stack__log "Found existing PR for $head: $existing_pr"
+            rm -f $file
+            echo $existing_pr
+            return 0
+        end
+
+        # Create new PR
         set -l url (gh pr create \
                         --base $base \
                         --head $head \
                         --title "$title" \
                         --body-file $file \
-                        --json url -q '.url' 2>/dev/null)
+                        --json url -q '.url' 2>&1)
         set -l rc $status
         rm -f $file
-        if test $rc -eq 0; echo $url; return 0; end
+
+        # Debug output
+        if test "$verbose" = "1"
+            echo "DEBUG: gh pr create exit code: $rc"
+            echo "DEBUG: gh pr create output: $url"
+        end
+
+        if test $rc -eq 0
+            echo $url
+            return 0
+        end
+
+        # Log the failure
+        _stack__log "Failed to create PR: $url"
         return $rc
     end
 
@@ -132,8 +159,27 @@ function stack \
 
         set -l pr_url (printf "%s\n" "$body" | _stack__create_pr "$title" $prev $branch)
         if test $status -ne 0
-            set pr_url (gh pr view $branch --json url -q '.url')
-            printf "%s\n" "$body" | _stack__edit_pr $branch "$title"
+            if test "$verbose" = "1"
+                echo "DEBUG: PR creation failed, attempting to get URL..."
+            end
+
+            set -l view_url (gh pr view $branch --json url -q '.url' 2>/dev/null)
+            set -l view_status $status
+
+            if test "$verbose" = "1"
+                echo "DEBUG: gh pr view exit code: $view_status"
+                echo "DEBUG: gh pr view URL: $view_url"
+            end
+
+            if test $view_status -eq 0
+                set pr_url $view_url
+                printf "%s\n" "$body" | _stack__edit_pr $branch "$title"
+            else
+                # Handle the case where both create and view failed
+                _stack__log "Both PR creation and PR view failed for $branch"
+                # Use a placeholder that shows where we are in the process
+                set pr_url "https://github.com/pr/for/$branch"
+            end
         end
 
         set pr_urls $pr_urls $pr_url
