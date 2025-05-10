@@ -166,11 +166,11 @@ function stack \
 
         _stack__log "Syncing branch $branch …"
         git branch -f $branch $sha > /dev/null
-        git push --quiet --force-with-lease $remote $branch
+        # Push branch but suppress the GitHub "Create a pull request" message
+        git push --quiet --force-with-lease $remote $branch > /dev/null 2>&1
 
         if test "$verbose" = "1"
-            echo "DEBUG: git push output for $branch:"
-            git push --force-with-lease $remote $branch 2>&1
+            echo "DEBUG: Branch $branch synced to remote"
         end
 
         set -l title (git show -s --format=%s $sha)
