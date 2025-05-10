@@ -163,9 +163,9 @@ function stack \
             if test -n "$number"
                 gh pr close $number --delete-branch --comment "Closing – commit removed from stack." > /dev/null
             else
-                git push $remote --delete $old > /dev/null ^/dev/null
+                git push $remote --delete $old > /dev/null 2> /dev/null
             end
-            git branch -D $old ^/dev/null
+            git branch -D $old 2> /dev/null
             set removed (math $removed + 1)
         end
     end
