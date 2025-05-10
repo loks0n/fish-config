@@ -119,6 +119,12 @@ function stack \
         if test "$verbose" = "1"
             echo "DEBUG: gh pr create exit code: $rc"
             echo "DEBUG: gh pr create output: $url"
+
+            # Debug specific commands and their outputs
+            git rev-parse $head 2>&1
+            git rev-parse $base 2>&1
+            echo "HEAD: $head, BASE: $base"
+            git log --oneline $base..$head
         end
 
         if test $rc -eq 0
