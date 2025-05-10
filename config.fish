@@ -11,3 +11,4 @@ fish_add_path "/Users/loks0n/.local/bin"
 # aliases
 alias lg="lazygit log"
 alias k="kubectl"
+alias s="stack"  # Add stack alias for testing PR stack
